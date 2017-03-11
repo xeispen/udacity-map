@@ -16,8 +16,10 @@ var stringStartsWith = function(string, startsWith) {
 };
 
 
+
 // MOVE: into viewModel
 function initMap() {
+	console.log('initMap');
 	// Create a map object and display it in the div of id="map"
 	map = new google.maps.Map(document.getElementById('map'), {
 		center: {lat:37.09024, lng:-95.712891},
@@ -80,6 +82,35 @@ function hideMarkers(markers) {
     };
 }
 
+function makeInvisible() {
+	for (var i = 0; i < placeMarkers.length; i++) {
+		placeMarkers[i].setVisible(false);
+	}
+}
+// Sets the map on all markers in the array.
+function setMapOnAll(map) {
+	for (var i = 0; i < placeMarkers.length; i++) {
+		placeMarkers[i].setMap(map);
+	}
+}
+// Removes the markers from the map, but keeps them in the array.
+function clearMarkers() {
+	setMapOnAll(null);
+}
+// Deletes all markers in the array by removing references to them.
+function deleteMarkers() {
+	clearMarkers();
+	placeMarkers = [];
+}
+
+function makeVisible(name) {
+	for (var i = 0; i < placeMarkers.length; i++) {
+		if(placeMarkers[i].title === name) {
+			placeMarkers[i].setVisible(true);
+		}
+	}
+}
+
 // This function takes in a color and creates a new marker icon of that color
 // Icon will be 21px wide by 34 px high, have an origin of 0, 0 and anchored at 10, 34
 function makeMarkerIcon(markerColor) {
@@ -108,7 +139,7 @@ function textSearchPlaces() {
     }, function(results, status) {
         if (status === google.maps.places.PlacesServiceStatus.OK) {
         	deferred.resolve(results);
-            createMarkersForPlaces(results);
+            //createMarkersForPlaces(results);
         }
     });
     return deferred.promise();
@@ -116,6 +147,8 @@ function textSearchPlaces() {
 
 // This function creates markers for each place found in either places search
 function createMarkersForPlaces(places) {
+	deleteMarkers();
+	console.log(placeMarkers);
     var bounds = new google.maps.LatLngBounds();
     for (var i = 0; i < places.length; i++) {
         var place = places[i];
@@ -157,6 +190,7 @@ function createMarkersForPlaces(places) {
     }
     map.fitBounds(bounds);
 }
+
 
 
 
@@ -216,6 +250,7 @@ var Place = function(data) {
 }
 
 var ViewModel = function() {
+	console.log('ViewModel');
 	// self always maps to this ViewModel
 	var self = this;
 	// Stores name of destination user entered
@@ -230,16 +265,13 @@ var ViewModel = function() {
 	this.filteredList = ko.computed(function() {
 		var filter = self.filter().toLowerCase();
 		if(!filter) {
-			console.log("!filter "+ filter);
 			return self.placesList();
 		} else {
-			console.log(filter);
 			return ko.utils.arrayFilter(self.placesList(), function(item) {
 				return stringStartsWith(item.name().toLowerCase(), filter);
 			});
 		}
 	}, this); 
-
 
 	// Updates the currentDestination when user enters a new destination
 	this.changeDestination = function() {
@@ -257,13 +289,24 @@ var ViewModel = function() {
 		// Sets a deferred within textSearchPlaces and waits until that is done
 		self.currentPlace(newPlaces);
 		$.when(textSearchPlaces()).done(function(data){
-			//self.placesList(data);
+			// Clears the observable
+			self.placesList.removeAll();
+			// Calls function to create markers
+			createMarkersForPlaces(data);
 			data.forEach(function(item){
 				self.placesList.push(new Place(item));
-				console.log(new Place(item));
 			});
 		});
 	};
+
+	this.filterMarkers = function(){
+		makeInvisible();
+	    //e.keyCode === 13 && that.search(); 
+	    for (var i = 0; i < this.filteredList().length; i++) {
+	    	makeVisible(this.filteredList()[i].name());
+	    }
+	};
+
 
 }
 

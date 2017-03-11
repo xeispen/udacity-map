@@ -6,9 +6,11 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="static/css/style.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slideout/1.0.1/slideout.min.js"></script>
 </head>
 
 <body>
+
     <div class="container">
         <div class="options-box">
             <h1>Plan your trip!</h1>
@@ -22,7 +24,7 @@
                 <input id="places-search" type="text" placeholder="Ex: Coffee in Santa Barbara">
                 <input data-bind="click: changePlaces" id="go-places" type="button" value="Go">
             <hr>
-                <input data-bind="value: filter, valueUpdate: 'afterkeydown'" id="filter" type="text" placeholder="Ex: Starbucks">
+                <input data-bind="value: filter, valueUpdate: 'afterkeydown', event: {keyup: filterMarkers}" id="filter" type="text" placeholder="Ex: Starbucks">
             <ul data-bind="foreach: filteredList">
                 <li data-bind="text: name"></li>
             </ul>
