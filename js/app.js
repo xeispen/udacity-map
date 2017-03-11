@@ -221,21 +221,21 @@ var ViewModel = function() {
 	// Stores name of destination user entered
 	this.currentDestination = ko.observable();
 	// Stores the keyword of the current places search
-	this.currentPlaces = ko.observable();
+	this.currentPlace = ko.observable();
 	// current list of places returned by textSearchPlaces
 	this.placesList = ko.observableArray([]);
 	// Current filter value
 	this.filter = ko.observable('');
 	// Filtered observable array
 	this.filteredList = ko.computed(function() {
-		var filter = this.filter().toLowerCase();
+		var filter = self.filter().toLowerCase();
 		if(!filter) {
 			console.log("!filter "+ filter);
-			return this.placesList();
+			return self.placesList();
 		} else {
 			console.log(filter);
-			return ko.utils.arrayFilter(this.placesList(), function(item) {
-				return stringStartsWith(item.name.toLowerCase(), filter);
+			return ko.utils.arrayFilter(self.placesList(), function(item) {
+				return stringStartsWith(item.name().toLowerCase(), filter);
 			});
 		}
 	}, this); 
@@ -255,10 +255,13 @@ var ViewModel = function() {
 		};
 		var newPlaces = document.getElementById('go-places').value;
 		// Sets a deferred within textSearchPlaces and waits until that is done
-		self.currentPlaces(newPlaces);
+		self.currentPlace(newPlaces);
 		$.when(textSearchPlaces()).done(function(data){
-			self.placesList(data);
-			console.log(data);
+			//self.placesList(data);
+			data.forEach(function(item){
+				self.placesList.push(new Place(item));
+				console.log(new Place(item));
+			});
 		});
 	};
 
