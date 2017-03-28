@@ -1,6 +1,6 @@
 html,
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Patua One', cursive;
     height: 100%;
     margin: 0;
     padding: 0;
@@ -30,6 +30,8 @@ label {
 .container {
     height: 100%;
     position: relative;
+    margin-left: 0px;
+    padding-left: 0px;
 }
 
 .options-box {
@@ -37,23 +39,65 @@ label {
     border: 1px solid #999;
     border-radius: 3px;
     height: 100%;
+    padding: 10px;
+    border-right: 10px;
     line-height: 35px;
-    padding: 10px 10px 30px 10px;
     text-align: left;
     width: 340px;
+    position: absolute;
+    overflow: auto;
+}
+
+.user {
+    position: relative;
+}
+
+.list {
+    position: relative;
+    max-height: auto;
+}
+
+.list-group-item {
+    background: none;
+    border: none;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+.glyphicon-menu-hamburger {
+    font-size: 30px;
+    padding-left: 5px;
+    padding-top: 5px;
+}
+
+.footer {
+    position: relative;
+    bottom: 0px;
+    font-size: 10px;
+    color: #f2f2f2;
+}
+
+.btn-default {
+    width: 80%;
+}
+
+#trigger {
+    position: absolute;
+    top: 0px;
+    left: 340px;
 }
 
 #map {
     bottom: 0px;
     height: 100%;
-    left: 362px;
+    left: 340px;
     position: absolute;
     right: 0px;
 }
 
 #zoom-to-area-text, #places-search, #filter {
     position: relative;
-    width: 70%;
+    width: 80%;
 }
 
 

@@ -5,8 +5,26 @@ var map;
 // over the number of places that show
 var placeMarkers = [];
 
+// YELP API
+var YELP_KEY = "OxZvVRYUynQrXWGlc5kGvQ";
+var YELP_KEY_SECRET = "arYjXn2ei0ck3TIjAaNdoGlWDKQ";
+var YELP_TOKEN = "Kk5NIETQjfaP7lCaa-qi7Es4TLTLYe1L";
+var YELP_TOKEN_SECRET = "7I-_v-8Fvl_WQVdMxSTuq0CAwvo";
 
-// Utility function
+function resize() {
+    var mapElement = document.getElementById('map');
+    var buttonElement = document.getElementById('trigger');
+    if (mapElement.style.left == '340px') {
+        mapElement.style.left = '0px';
+        buttonElement.style.left = '0px';
+    } else {
+        mapElement.style.left = '340px';
+        buttonElement.style.left = '340px';
+    }
+    var center = map.getCenter();
+    google.maps.event.trigger(map, 'resize');
+    map.panTo(center);
+}
 
 var stringStartsWith = function(string, startsWith) {          
     string = string || "";
@@ -43,6 +61,7 @@ function initMap() {
     // Bias the searchbox to within the bounds of the map
     searchBox.setBounds(map.getBounds());
 }
+
 
 // Function takes the user input value in the find nearby area text input
 // locates it, and then zooms into that area. This is so that the user can
@@ -111,6 +130,19 @@ function makeVisible(name) {
 	}
 }
 
+function infoWindow(name, infowindow) {
+	for (var i = 0; i < placeMarkers.length; i++) {
+		if(placeMarkers[i].title === name) {
+			if(placeMarkers[i] == infowindow.marker) {
+				console.log("This infowindow is already on this marker!");
+			} else {
+            	getYelpDetails(placeMarkers[i], infowindow);
+            };
+        };
+    };
+}
+
+
 // This function takes in a color and creates a new marker icon of that color
 // Icon will be 21px wide by 34 px high, have an origin of 0, 0 and anchored at 10, 34
 function makeMarkerIcon(markerColor) {
@@ -126,127 +158,323 @@ function makeMarkerIcon(markerColor) {
 
 
 
-// This function fires when the user selects "go" on the places search
-// It will do a nearby search using the entered query string or place
-function textSearchPlaces() {
-	var deferred = $.Deferred();
-    var bounds = map.getBounds();
-    hideMarkers(placeMarkers);
-    var placesService = new google.maps.places.PlacesService(map);
-    placesService.textSearch({
-        query: document.getElementById('places-search').value,
-        bounds: bounds
-    }, function(results, status) {
-        if (status === google.maps.places.PlacesServiceStatus.OK) {
-        	deferred.resolve(results);
-            //createMarkersForPlaces(results);
-        }
-    });
-    return deferred.promise();
+// // This function fires when the user selects "go" on the places search
+// // It will do a nearby search using the entered query string or place
+// function textSearchPlaces() {
+// 	var deferred = $.Deferred();
+//     var bounds = map.getBounds();
+//     hideMarkers(placeMarkers);
+//     var placesService = new google.maps.places.PlacesService(map);
+//     placesService.textSearch({
+//         query: document.getElementById('places-search').value,
+//         bounds: bounds
+//     }, function(results, status) {
+//         if (status === google.maps.places.PlacesServiceStatus.OK) {
+//         	deferred.resolve(results);
+//             //createMarkersForPlaces(results);
+//         }
+//     });
+//     return deferred.promise();
+// }
+
+// // This function creates markers for each place found in either places search
+// function createMarkersForPlaces(places) {
+// 	deleteMarkers();
+// 	console.log(places);
+//     var bounds = new google.maps.LatLngBounds();
+//     for (var i = 0; i < places.length; i++) {
+//         var place = places[i];
+//         var icon = {
+//             url: place.icon,
+//             size: new google.maps.Size(35, 35),
+//             origin: new google.maps.Point(0, 0),
+//             anchor: new google.maps.Point(15, 34),
+//             scaledSize: new google.maps.Size(25, 25)
+//         };
+//         // Create a marker for each place
+//         var marker = new google.maps.Marker({
+//             map: map,
+//             icon: icon,
+//             title: place.name,
+//             position: place.geometry.location,
+//             id: place.place_id
+//         });
+//         // Create a single infowindow to be used with the place details information 
+//         // so that only one is open at once
+//         var placeInfoWindow = new google.maps.InfoWindow();
+//         // If a marker is clicked, do a place details search on it in the next function
+//         marker.addListener('click', function() {
+//             if (placeInfoWindow.marker == this) {
+//                 console.log("This infowindow is already on this marker@!");
+//             } else {
+//                 // `this` is the marker
+//                 console.log('opening infowindow');
+//                 getPlacesDetails(this, placeInfoWindow);
+//             }
+//         });
+//         placeMarkers.push(marker);
+//         if (place.geometry.viewport) {
+//             // Only geocodes have viewport
+//             bounds.union(place.geometry.viewport);
+//         } else {
+//             bounds.extend(place.geometry.location);
+//         }
+//     }
+//     map.fitBounds(bounds);
+// }
+
+
+
+// // This is the PLACES DETAILS search - it's the most detailed so it is only
+// // executed when a marker is selected, indicating the user wants more details about place
+// function getPlacesDetails(marker, infowindow) {
+//     var service = new google.maps.places.PlacesService(map);
+//     service.getDetails({
+//         placeId: marker.id
+//     }, function(place, status) {
+//         if (status === google.maps.places.PlacesServiceStatus.OK) {
+//             // Set the marker property on this infowindow so it isn't created again
+//             infowindow.marker = marker;
+//             var innerHTML = '<div>';
+//             if (place.name) {
+//                 innerHTML += '<strong>' + place.name + '</strong>';
+//             }
+//             if (place.formatted_address) {
+//                 innerHTML += '<br>' + place.formatted_address;
+//             }
+//             if (place.formatted_phone_number) {
+//                 innerHTML += '<br>' + place.formatted_phone_number;
+//             }
+//             if (place.opening_hours) {
+//                 innerHTML += '<br><br><strong>Hours:</strong><br>' +
+//                     place.opening_hours.weekday_text[0] + '<br>' +
+//                     place.opening_hours.weekday_text[1] + '<br>' +
+//                     place.opening_hours.weekday_text[2] + '<br>' +
+//                     place.opening_hours.weekday_text[3] + '<br>' +
+//                     place.opening_hours.weekday_text[4] + '<br>' +
+//                     place.opening_hours.weekday_text[5] + '<br>' +
+//                     place.opening_hours.weekday_text[6];
+//             }
+//             if (place.photos) {
+//                 innerHTML += '<br><br><img src="' + place.photos[0].getUrl({ maxHeight: 100, maxWidth: 200 }) + '">';
+//             }
+//             innerHTML += '</div>';
+//             infowindow.setContent(innerHTML);
+//             infowindow.open(map, marker);
+//             // Make sure the marker property is cleared if the infowindow is closed
+//             infowindow.addListener('closeclick', function() {
+//                 infowindow.marker = null;
+//             });
+//         }
+//     });
+// }
+
+// Generate the oauth token to use
+function nonce_generate() {
+    return (Math.floor(Math.random() * 1e12).toString());
 }
+
+function getYelp() {
+	var deferred = $.Deferred();
+	var bounds = map.getBounds();
+	var ne_latlng = bounds.getNorthEast();
+	var sw_latlng = bounds.getSouthWest();
+    var YELP_URL = "https://api.yelp.com/v2/search/?";
+
+	hideMarkers(placeMarkers);
+
+    var parameters = {
+    	oauth_consumer_key: YELP_KEY,
+    	oauth_token: YELP_TOKEN,
+    	oauth_signature_method: 'HMAC-SHA1',
+    	oauth_timestamp: Math.floor(Date.now()/1000),
+    	oauth_nonce: nonce_generate(),
+    	oauth_version: '1.0',
+    	callback: 'cb',
+    	term: document.getElementById('places-search').value,
+		bounds: sw_latlng.lat() + ',' + sw_latlng.lng() +
+			'|' + ne_latlng.lat() + ',' + ne_latlng.lng()
+    }
+
+	var encodedSignature = oauthSignature.generate('GET', YELP_URL, parameters, YELP_KEY_SECRET, YELP_TOKEN_SECRET);
+	
+	parameters.oauth_signature = encodedSignature;
+
+	var settings = {
+		url: YELP_URL,
+		data: parameters,
+		cache: true,
+		dataType: 'jsonp',
+		success: function(response) {
+	        deferred.resolve(response.businesses);
+		},
+		fail: function() {
+			console.log('fail');
+		}
+	};
+
+	$.ajax(settings);
+
+	return deferred.promise();
+}
+
+// // This function creates markers for each place found in either places search
+// function createMarkersForYelp(places) {
+// 	deleteMarkers();
+//     var bounds = new google.maps.LatLngBounds();
+//     for (var i = 0; i < places.length; i++) {
+//         var place = places[i];
+
+//         console.log(place);
+//         // Create a new google latlng for marker
+//         var latlng = new google.maps.LatLng(place.location.coordinate.latitude, 
+//         	place.location.coordinate.longitude);
+//         // Create a marker for each place
+//         var marker = new google.maps.Marker({
+//             map: map,
+//             title: place.name,
+//             position: latlng,
+//             id: place.id
+//         });
+//         // Create a single infowindow to be used with the place details information 
+//         // so that only one is open at once
+//         var placeInfoWindow = new google.maps.InfoWindow();
+//         // If a marker is clicked, do a place details search on it in the next function
+//         marker.addListener('click', function() {
+//             if (placeInfoWindow.marker == this) {
+//                 console.log("This infowindow is already on this marker!");
+//             } else {
+//                 // `this` is the marker
+//                 console.log('opening infowindow');
+//                 getYelpDetails(this, placeInfoWindow);
+//             }
+//         });
+//         placeMarkers.push(marker);
+// 		bounds.extend(latlng);    
+// 	}
+//     map.fitBounds(bounds);
+// }
+
 
 // This function creates markers for each place found in either places search
-function createMarkersForPlaces(places) {
-	deleteMarkers();
-	console.log(placeMarkers);
-    var bounds = new google.maps.LatLngBounds();
-    for (var i = 0; i < places.length; i++) {
-        var place = places[i];
-        var icon = {
-            url: place.icon,
-            size: new google.maps.Size(35, 35),
-            origin: new google.maps.Point(0, 0),
-            anchor: new google.maps.Point(15, 34),
-            scaledSize: new google.maps.Size(25, 25)
-        };
-        // Create a marker for each place
-        var marker = new google.maps.Marker({
-            map: map,
-            icon: icon,
-            title: place.name,
-            position: place.geometry.location,
-            id: place.place_id
-        });
-        // Create a single infowindow to be used with the place details information 
-        // so that only one is open at once
-        var placeInfoWindow = new google.maps.InfoWindow();
-        // If a marker is clicked, do a place details search on it in the next function
-        marker.addListener('click', function() {
-            if (placeInfoWindow.marker == this) {
-                console.log("This infowindow is already on this marker@!");
-            } else {
-                // `this` is the marker
-                console.log('opening infowindow');
-                getPlacesDetails(this, placeInfoWindow);
-            }
-        });
-        placeMarkers.push(marker);
-        if (place.geometry.viewport) {
-            // Only geocodes have viewport
-            bounds.union(place.geometry.viewport);
+function createMarker(place) {
+    // Create a new google latlng for marker
+    var latlng = new google.maps.LatLng(place.location.coordinate.latitude, 
+    	place.location.coordinate.longitude);
+    
+	// Styled markers for each location
+	var defaultIcon = makeMarkerIcon('0091ff');
+
+	// Highlighted marker for when users mouseover
+	var highlightedIcon = makeMarkerIcon('FFFF24');
+
+    var marker = new google.maps.Marker({
+        map: map,
+        title: place.name,
+        position: latlng,
+        icon: defaultIcon,
+        animation: google.maps.Animation.DROP,
+        id: place.id
+    });
+    // Create a single infowindow to be used with the place details information 
+    // so that only one is open at once
+    var placeInfoWindow = new google.maps.InfoWindow();
+    // If a marker is clicked, do a place details search on it in the next function
+    marker.addListener('click', function() {
+        if (placeInfoWindow.marker == this) {
+            console.log("This infowindow is already on this marker!");
         } else {
-            bounds.extend(place.geometry.location);
+            // `this` is the marker
+            console.log('opening infowindow');
+            getYelpDetails(this, placeInfoWindow);
         }
-    }
-    map.fitBounds(bounds);
+    });
+    placeMarkers.push(marker);    
+    return marker;
 }
 
-
-
-
-// This is the PLACES DETAILS search - it's the most detailed so it is only
+// This is the YELP DETAILS search - it's the most detailed so it is only
 // executed when a marker is selected, indicating the user wants more details about place
-function getPlacesDetails(marker, infowindow) {
-    var service = new google.maps.places.PlacesService(map);
-    service.getDetails({
-        placeId: marker.id
-    }, function(place, status) {
-        if (status === google.maps.places.PlacesServiceStatus.OK) {
-            // Set the marker property on this infowindow so it isn't created again
-            infowindow.marker = marker;
+function getYelpDetails(marker, infowindow) {
+	// Styled markers for each location
+	var defaultIcon = makeMarkerIcon('0091ff');
+	// Highlighted marker for when users mouseover
+	var highlightedIcon = makeMarkerIcon('FFFF24');
+
+	marker.setIcon(highlightedIcon);
+
+	var YELP_URL = "https://api.yelp.com/v2/business/" + marker.id;
+	var parameters = {
+    	oauth_consumer_key: YELP_KEY,
+    	oauth_token: YELP_TOKEN,
+    	oauth_signature_method: 'HMAC-SHA1',
+    	oauth_timestamp: Math.floor(Date.now()/1000),
+    	oauth_nonce: nonce_generate(),
+    	oauth_version: '1.0',
+    	callback: 'cb'
+    }
+
+	var encodedSignature = oauthSignature.generate('GET', YELP_URL, parameters, YELP_KEY_SECRET, YELP_TOKEN_SECRET);
+	
+	parameters.oauth_signature = encodedSignature;
+
+	var settings = {
+		url: YELP_URL,
+		data: parameters,
+		cache: true,
+		dataType: 'jsonp',
+		success: function(place) {
+	        infowindow.marker = marker;
             var innerHTML = '<div>';
             if (place.name) {
-                innerHTML += '<strong>' + place.name + '</strong>';
+                innerHTML += '<strong>' + place.name + '</strong><hr>';
             }
-            if (place.formatted_address) {
-                innerHTML += '<br>' + place.formatted_address;
+            if (place.review_count) {
+                innerHTML += place.review_count + ' reviews';
             }
-            if (place.formatted_phone_number) {
-                innerHTML += '<br>' + place.formatted_phone_number;
+            if (place.rating_img_url) {
+                innerHTML += '<br><img src="' + place.rating_img_url + '">';
             }
-            if (place.opening_hours) {
-                innerHTML += '<br><br><strong>Hours:</strong><br>' +
-                    place.opening_hours.weekday_text[0] + '<br>' +
-                    place.opening_hours.weekday_text[1] + '<br>' +
-                    place.opening_hours.weekday_text[2] + '<br>' +
-                    place.opening_hours.weekday_text[3] + '<br>' +
-                    place.opening_hours.weekday_text[4] + '<br>' +
-                    place.opening_hours.weekday_text[5] + '<br>' +
-                    place.opening_hours.weekday_text[6];
+            if (place.location.address) {
+                innerHTML += '<br>' + place.location.address;
             }
-            if (place.photos) {
-                innerHTML += '<br><br><img src="' + place.photos[0].getUrl(
-                    {maxHeight: 100, maxWidth: 200}) + '">';
+            if (place.location.address) {
+                innerHTML += '<br>' + place.location.city + ', ' + place.location.state_code;
+            }
+            if (place.display_phone) {
+                innerHTML += '<br>' + place.display_phone;
+            }
+            if (place.image_url) {
+                innerHTML += '<br><br><img src="' + place.image_url + '">';
             }
             innerHTML += '</div>';
             infowindow.setContent(innerHTML);
-            infowindow.open(map, marker);
+            infowindow.open(map,marker);
             // Make sure the marker property is cleared if the infowindow is closed
             infowindow.addListener('closeclick', function() {
+            	marker.setIcon(defaultIcon);
                 infowindow.marker = null;
             });
-        }
-    });
+		},
+		fail: function() {
+			console.log('fail');
+		}
+	};
+
+	$.ajax(settings);
 }
-
-
 
 
 
 
 // Each instance of the model is a business returned by Places API call
 var Place = function(data) {
-	this.name = ko.observable(data.name);
+	this.name = ko.observable(data.title);
+	
+	var placeInfoWindow = new google.maps.InfoWindow();
+	this.infoWindow = function() {
+		infoWindow(this.name(), placeInfoWindow);
+	}
 }
 
 var ViewModel = function() {
@@ -288,25 +516,30 @@ var ViewModel = function() {
 		var newPlaces = document.getElementById('go-places').value;
 		// Sets a deferred within textSearchPlaces and waits until that is done
 		self.currentPlace(newPlaces);
-		$.when(textSearchPlaces()).done(function(data){
-			// Clears the observable
+
+		$.when(getYelp()).done(function(data){
 			self.placesList.removeAll();
-			// Calls function to create markers
-			createMarkersForPlaces(data);
+			deleteMarkers();
+
+    		var bounds = new google.maps.LatLngBounds();
+
 			data.forEach(function(item){
-				self.placesList.push(new Place(item));
+				var marker = createMarker(item);
+				console.log(marker);
+				self.placesList.push(new Place(marker));
+				bounds.extend(marker.position);
 			});
+			map.fitBounds(bounds);
 		});
 	};
 
 	this.filterMarkers = function(){
+		// Hides all markers, then unhides filtered list
 		makeInvisible();
-	    //e.keyCode === 13 && that.search(); 
 	    for (var i = 0; i < this.filteredList().length; i++) {
 	    	makeVisible(this.filteredList()[i].name());
 	    }
 	};
-
 
 }
 
